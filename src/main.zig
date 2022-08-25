@@ -7,6 +7,8 @@ const CYW43_WL_GPIO_LED_PIN = 0;
 var b : i32 = 0;
 
 export fn zigMain() void {
+    stdio_init_all();
+    // TODO: handle stdout
     while (true) {
         b = if (b == 0) 1 else 0;
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, b);

@@ -1,26 +1,37 @@
-# Zig on the Pico W
-Zig on the Raspberry Pi Pico W without losing access to the SDK.
+# Zig on the Raspberry Pi Pico
+Zig on the Raspberry Pi Pico without losing access to the SDK.
 
 # Requirements
-Have the Pico SDK set up like normal.
+Install the Pico SDK dependencies
+```sh
+sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+```
+
+Clone the Pico SDK
+```sh
+git clone https://github.com/raspberrypi/pico-sdk path/to/pico-sdk
+```
+
+Make sure `PICO_SDK_PATH` is set
+```sh
+export PICO_SDK_PATH path/to/pico-sdk
+```
 
 # Build
-```shell
-# create build directory
-zig build cmake
+To build the example for the Pico W
+```
+zig build
+```
 
-# build the firmware
-zig build firmware
+# Running
+If you have picotool installed, load the resulting `uf2` file
+```
+picotool load -f zig-out/uf2/pico-app.uf2
 ```
 
 # Todo
-- [ ] integrate CMakeLists.txt into zig build somehow
-- [ ] configure pico-sdk components through zig build
+- [x] integrate cmake into zig build
+- [ ] add include paths of pico libraries to app
 - [ ] ???
 - [ ] profit
-
-Use the produced UF2 file on your Pico.
-
-### Warning
-This is incredibly scuffed, the zig build script literally calls itself.
 

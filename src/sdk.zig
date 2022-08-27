@@ -1,4 +1,5 @@
 const std = @import("std");
+const util = @import("util.zig");
 
 const Builder = std.build.Builder;
 const Step = std.build.Step;
@@ -7,7 +8,7 @@ const LibExeObjStep = std.build.LibExeObjStep;
 pub const GenPicoListsStep = struct {
     const Self = @This();
 
-    const entry_c = "src" ++ std.fs.path.sep_str ++ "entry.c";
+    const entry_c = "entry.c";
     const cmake_version = "3.9";
     const c_std = "11";
     const cxx_std = "17";
@@ -56,7 +57,7 @@ pub const GenPicoListsStep = struct {
         defer allocator.free(pico_sdk_import);
 
         const entry_c_path = try std.mem.concat(allocator, u8, &.{
-            self.builder.build_root,
+            util.picoZigDirPath(),
             std.fs.path.sep_str,
             entry_c,
         });

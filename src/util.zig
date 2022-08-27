@@ -1,5 +1,10 @@
 const std = @import("std");
 
+/// Path to this src dir, required for 'entry.c'
+pub fn picoZigDirPath() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse unreachable;
+}
+
 /// Like std.ChildProcess.exec but with failure based on process exit state
 pub fn exec(
     allocator: std.mem.Allocator,

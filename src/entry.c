@@ -1,7 +1,10 @@
-extern void zigMain(); 
+// C entry point which defined the main function.
+// Figure out how to change entry point to just have the 'main' definable in zig.
+extern void init();
+extern void loop();
 
 int main() {
-    // enter main loop inside Zig code
-    zigMain();
+    init();
+    while (1) loop();
 }
 

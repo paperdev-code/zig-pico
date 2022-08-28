@@ -2,10 +2,12 @@ const std = @import("std");
 const sdk = @import("sdk.zig");
 const cmake = @import("cmake.zig");
 const util = @import("util.zig");
+const libs = @import("libs.zig");
 
 const Builder = std.build.Builder;
 const Step = std.build.Step;
 const LibExeObjStep = std.build.LibExeObjStep;
+const CreateOptions = std.build.InstallRawStep.CreateOptions;
 
 pub const rp2040_target = std.zig.CrossTarget {
     .cpu_arch = .thumb,
@@ -31,17 +33,30 @@ pub const PicoAppStep = struct {
         name: []const u8,
         root_src: ?[]const u8,
         board: []const u8,
-        libs: []const sdk.Library,
+        libraries: []const libs.Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         const zig = builder.addStaticLibrary(name, root_src);
         zig.setTarget(rp2040_target);
-        zig.install();
+        zig.override_dest_dir = std.build.InstallDir {
+            .custom = "lib",
+        }; 
+        //zig.install();
+        //zig.linkLibC();
+        //const include_paths = libs.Library.listIncludes(
+        //    builder.allocator,
+        //    libs,
+        //) catch unreachable;
+        //defer include_paths.deinit();
+        //for (include_paths.items) |include_path| {
+        //    zig.addIncludePath(include_path);
+        //    std.debug.print("{s}\n", .{include_path});
+        //}
         const genpicolists = sdk.GenPicoListsStep.create(
             builder,
             zig,
             board,
-            libs,
+            libraries,
         );
         const cmakelists = cmake.ListsStep.create(builder);
         cmakelists.txt_src = &genpicolists.txt;

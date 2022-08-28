@@ -5,6 +5,10 @@ pub fn picoZigDirPath() []const u8 {
     return std.fs.path.dirname(@src().file) orelse unreachable;
 }
 
+pub fn picoSdkDirPath() ![]const u8 {
+    return std.os.getenv("PICO_SDK_PATH") orelse error.PicoSdkPathEnv;
+}
+
 /// Like std.ChildProcess.exec but with failure based on process exit state
 pub fn exec(
     allocator: std.mem.Allocator,

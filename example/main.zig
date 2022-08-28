@@ -1,3 +1,8 @@
+//const c = @cImport({
+//    @cInclude("pico/stdlib.h");
+//    @cInclude("pico/cyw43_arch.h");
+//});
+
 extern fn stdio_init_all() void;
 extern fn cyw43_arch_init() c_int;
 extern fn cyw43_arch_gpio_put(pin: c_int, value: c_int) void;

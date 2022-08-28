@@ -1,6 +1,8 @@
 const std = @import("std");
 const util = @import("util.zig");
+const libs = @import("libs.zig");
 
+const Library = libs.Library;
 const Builder = std.build.Builder;
 const Step = std.build.Step;
 const LibExeObjStep = std.build.LibExeObjStep;
@@ -17,7 +19,7 @@ pub const GenPicoListsStep = struct {
     step: Step,
     txt: ?[]const u8,
     app: *LibExeObjStep,
-    libs: []const Library,
+    libraries: []const Library,
     board: []const u8,
     enable_stdio: Stdio_Options,
 
@@ -25,7 +27,7 @@ pub const GenPicoListsStep = struct {
         builder: *Builder,
         app: *LibExeObjStep,
         board: []const u8,
-        libs: []const Library,
+        libraries: []const Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         self.* = Self {
@@ -38,11 +40,10 @@ pub const GenPicoListsStep = struct {
             ),
             .txt = null,
             .app = app,
-            .libs = libs,
+            .libraries = libraries,
             .board = board,
             .enable_stdio = .none,
         };
-        self.step.dependOn(&app.install_step.?.step);
         return self;
     }
 
@@ -63,7 +64,18 @@ pub const GenPicoListsStep = struct {
         });
         defer allocator.free(entry_c_path);
 
-        const libnames = try Library.listNames(allocator, self.libs);
+        const app_path = try std.mem.concat(allocator, u8 , &.{
+            self.builder.install_prefix,
+            std.fs.path.sep_str,
+            self.app.override_dest_dir.?.custom,
+            std.fs.path.sep_str,
+            "lib",
+            self.app.name,
+            ".a",
+        });
+        defer allocator.free(app_path);
+
+        const libnames = try Library.listNames(allocator, self.libraries);
         defer allocator.free(libnames);
 
         const usb : i32 =
@@ -95,7 +107,7 @@ pub const GenPicoListsStep = struct {
                 cxx_std,
                 pico_sdk_import,
                 self.app.name,
-                self.app.installed_path.?,
+                app_path,
                 self.app.name, entry_c_path,
                 self.app.name, libnames,
                 self.app.name, usb,
@@ -108,7 +120,7 @@ pub const GenPicoListsStep = struct {
     }
 
     fn includePicoSdk(allocator: std.mem.Allocator) ![]const u8 {
-        if (std.os.getenv("PICO_SDK_PATH")) |pico_sdk_path| { 
+        if (util.picoSdkDirPath()) |pico_sdk_path| { 
             var pico_sdk_dir = try std.fs.openDirAbsolute(pico_sdk_path, .{});
             defer pico_sdk_dir.close();
             var pico_sdk_import = try pico_sdk_dir.openFile(
@@ -120,7 +132,7 @@ pub const GenPicoListsStep = struct {
             try reader.readAllArrayList(&contents, 5000);
             return contents.toOwnedSlice();
         }
-        else return error.PicoSdkPathEnv;
+        else |err| return err;
     }
 };
 
@@ -129,34 +141,5 @@ pub const Stdio_Options = enum {
     uart,
     usb,
     uart_usb
-};
-
-pub const Library = struct {
-    name: []const u8,
-    path: []const u8,
-
-    pub fn listNames(
-        allocator: std.mem.Allocator,
-        libs: []const Library
-    ) ![]const u8 {
-        var list = std.ArrayList(u8).init(allocator);
-        for (libs) |lib| {
-            try list.appendSlice(lib.name);
-            try list.append(' ');
-        }
-        return list.toOwnedSlice();
-    }
-};
-
-pub const libraries = struct {
-    pub const pico_stdlib = Library {
-        .name = "pico_stdlib",
-        .path = "TODO",
-    };
-
-    pub const pico_cyw43_arch_none = Library {
-        .name = "pico_cyw43_arch_none",
-        .path = "TODO",
-    }; 
 };
 

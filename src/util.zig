@@ -37,23 +37,12 @@ pub fn exec(
     }
 }
 
-pub fn zigCachePath(
-    b: *std.build.Builder,
-) ![]const u8 {
-    const actual_cache_root = try std.mem.concat(b.allocator, u8, &.{
-        b.build_root,
-        std.fs.path.sep_str,
-        b.cache_root,
-    });
-    return actual_cache_root;
-}
-
 pub fn zigCacheMakePath(
     b: *std.build.Builder,
     sub_path: []const u8,
     comptime log_scope: anytype,
 ) ![]const u8 {
-    const actual_cache_root = try zigCachePath(b);
+    const actual_cache_root = b.pathFromRoot(b.cache_root);
     defer b.allocator.free(actual_cache_root);
     var cache_dir = try std.fs.openDirAbsolute(actual_cache_root, .{});
     defer cache_dir.close();
@@ -77,7 +66,7 @@ pub fn zigCacheMakeOpenPath(
     flags: std.fs.Dir.OpenDirOptions,
     comptime log_scope: anytype,
 ) !std.fs.Dir {
-    const actual_cache_root = try zigCachePath(b);
+    const actual_cache_root = b.pathFromRoot(b.cache_root);
     defer b.allocator.free(actual_cache_root);
     var cache_dir = try std.fs.openDirAbsolute(actual_cache_root, .{});
     defer cache_dir.close();
@@ -96,7 +85,11 @@ pub fn zigBuildMakeOpenPath(
     flags: std.fs.Dir.OpenDirOptions,
     comptime log_scope: anytype,
 ) !std.fs.Dir {
-    var build_dir = try std.fs.openDirAbsolute(b.install_path, .{});
+    const path_buffer = try b.allocator.alloc(u8, std.fs.MAX_PATH_BYTES);
+    defer b.allocator.free(path_buffer);
+    const real_prefix_path = try std.fs.realpath(b.install_prefix, path_buffer[0..std.fs.MAX_PATH_BYTES]);
+
+    var build_dir = try std.fs.openDirAbsolute(real_prefix_path, .{});
     defer build_dir.close();
     const dir = try build_dir.makeOpenPath(sub_path, flags);
     std.log.scoped(log_scope).debug("opened path {s}{s}{s}", .{

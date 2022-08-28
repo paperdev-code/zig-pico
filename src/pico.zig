@@ -2,7 +2,7 @@ const std = @import("std");
 const sdk = @import("sdk.zig");
 const cmake = @import("cmake.zig");
 const util = @import("util.zig");
-const libs = @import("libs.zig");
+const Library = @import("Library.zig");
 
 const Builder = std.build.Builder;
 const Step = std.build.Step;
@@ -33,7 +33,7 @@ pub const PicoAppStep = struct {
         name: []const u8,
         root_src: ?[]const u8,
         board: []const u8,
-        libraries: []const libs.Library,
+        libs: []const Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         const zig = builder.addStaticLibrary(name, root_src);
@@ -41,7 +41,7 @@ pub const PicoAppStep = struct {
         zig.override_dest_dir = std.build.InstallDir {
             .custom = "lib",
         }; 
-        //zig.install();
+        zig.install();
         //zig.linkLibC();
         //const include_paths = libs.Library.listIncludes(
         //    builder.allocator,
@@ -56,7 +56,7 @@ pub const PicoAppStep = struct {
             builder,
             zig,
             board,
-            libraries,
+            libs,
         );
         const cmakelists = cmake.ListsStep.create(builder);
         cmakelists.txt_src = &genpicolists.txt;

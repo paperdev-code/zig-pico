@@ -1,8 +1,7 @@
 const std = @import("std");
 const util = @import("util.zig");
-const libs = @import("libs.zig");
+const Library = @import("Library.zig");
 
-const Library = libs.Library;
 const Builder = std.build.Builder;
 const Step = std.build.Step;
 const LibExeObjStep = std.build.LibExeObjStep;
@@ -19,7 +18,7 @@ pub const GenPicoListsStep = struct {
     step: Step,
     txt: ?[]const u8,
     app: *LibExeObjStep,
-    libraries: []const Library,
+    libs: []const Library,
     board: []const u8,
     enable_stdio: Stdio_Options,
 
@@ -27,7 +26,7 @@ pub const GenPicoListsStep = struct {
         builder: *Builder,
         app: *LibExeObjStep,
         board: []const u8,
-        libraries: []const Library,
+        libs: []const Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         self.* = Self {
@@ -40,7 +39,7 @@ pub const GenPicoListsStep = struct {
             ),
             .txt = null,
             .app = app,
-            .libraries = libraries,
+            .libs = libs,
             .board = board,
             .enable_stdio = .none,
         };
@@ -64,8 +63,12 @@ pub const GenPicoListsStep = struct {
         });
         defer allocator.free(entry_c_path);
 
+        const path_buffer = try allocator.alloc(u8, std.fs.MAX_PATH_BYTES);
+        defer allocator.free(path_buffer);
+        const real_prefix_path = try std.fs.realpath(self.builder.install_prefix, path_buffer[0..std.fs.MAX_PATH_BYTES]);
+
         const app_path = try std.mem.concat(allocator, u8 , &.{
-            self.builder.install_prefix,
+            real_prefix_path,
             std.fs.path.sep_str,
             self.app.override_dest_dir.?.custom,
             std.fs.path.sep_str,
@@ -75,7 +78,7 @@ pub const GenPicoListsStep = struct {
         });
         defer allocator.free(app_path);
 
-        const libnames = try Library.listNames(allocator, self.libraries);
+        const libnames = try Library.listNames(allocator, self.libs);
         defer allocator.free(libnames);
 
         const usb : i32 =

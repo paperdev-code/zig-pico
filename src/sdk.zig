@@ -63,9 +63,8 @@ pub const GenPicoListsStep = struct {
         });
         defer allocator.free(entry_c_path);
 
-        const path_buffer = try allocator.alloc(u8, std.fs.MAX_PATH_BYTES);
-        defer allocator.free(path_buffer);
-        const real_prefix_path = try std.fs.realpath(self.builder.install_prefix, path_buffer[0..std.fs.MAX_PATH_BYTES]);
+        const real_prefix_path = try util.zigInstallDirPath(self.builder);
+        defer allocator.free(real_prefix_path);
 
         const app_path = try std.mem.concat(allocator, u8 , &.{
             real_prefix_path,

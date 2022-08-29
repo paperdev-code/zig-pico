@@ -36,32 +36,38 @@ pub const PicoAppStep = struct {
         libs: []const Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
+
         const zig = builder.addStaticLibrary(name, root_src);
         zig.setTarget(rp2040_target);
         zig.override_dest_dir = std.build.InstallDir {
             .custom = "lib",
-        }; 
-        zig.install();
-        //zig.linkLibC();
-        //const include_paths = libs.Library.listIncludes(
-        //    builder.allocator,
-        //    libs,
-        //) catch unreachable;
-        //defer include_paths.deinit();
-        //for (include_paths.items) |include_path| {
-        //    zig.addIncludePath(include_path);
-        //    std.debug.print("{s}\n", .{include_path});
-        //}
+        };
+
         const genpicolists = sdk.GenPicoListsStep.create(
             builder,
             zig,
             board,
             libs,
         );
+
         const cmakelists = cmake.ListsStep.create(builder);
         cmakelists.txt_src = &genpicolists.txt;
         cmakelists.step.dependOn(&genpicolists.step);
-        const cmakebuild = cmake.BuildStep.create(builder, cmakelists);
+
+        _ = Library.IncludeStep.create(
+            builder,
+            libs,
+            zig,
+            cmakelists,
+        );
+
+        zig.install();
+        const cmakebuild = cmake.BuildStep.create(
+            builder,
+            cmakelists,
+            zig.install_step.?,
+        );
+
         const cmakemake = cmake.MakeStep.create(builder, cmakebuild);
         self.* = Self {
             .builder = builder,
@@ -78,6 +84,7 @@ pub const PicoAppStep = struct {
             .cmakemake = cmakemake,
             .emit_uf2 = true,
         };
+
         self.step.dependOn(&cmakemake.step);
         return self;
     }

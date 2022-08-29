@@ -1,12 +1,11 @@
 const std = @import("std");
 const util = @import("util.zig");
 
-const log = std.log.scoped(.Cmake);
-
 const Builder = std.build.Builder;
 const Step = std.build.Step;
 const Dir = std.fs.Dir;
 const File = std.fs.File;
+const InstallArtifactStep = std.build.InstallArtifactStep;
 
 pub const MakeStep = struct {
     const Self = @This();
@@ -55,8 +54,6 @@ pub const MakeStep = struct {
 pub const BuildStep = struct {
     const Self = @This();
 
-    const dir_name = "build";
-
     builder: *Builder,
     step: Step,
     build_dir: ?[]const u8,
@@ -65,6 +62,7 @@ pub const BuildStep = struct {
     pub fn create(
         builder: *Builder,
         cmakelists: *ListsStep,
+        install_step: *InstallArtifactStep,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         self.* = Self {
@@ -79,17 +77,14 @@ pub const BuildStep = struct {
             .cmakelists = cmakelists,
         };
         self.step.dependOn(&cmakelists.step);
+        self.step.dependOn(&install_step.step);
         return self;
     }
 
     fn make(step: *Step) !void {
         const self = @fieldParentPtr(Self, "step", step);
         if (self.cmakelists.path) |path| {
-            self.build_dir = try util.zigCacheMakePath(
-                self.builder,
-                dir_name,
-                .CmakeBuild,
-            );
+            self.build_dir = self.cmakelists.build_dir.?;
             try util.exec(
                 self.builder.allocator,
                 &.{"cmake", "-S", path, "-B", self.build_dir.?},
@@ -105,6 +100,7 @@ pub const ListsStep = struct {
     const Self = @This();
 
     const dir_name = "cmake";
+    const build_dir_name = "build";
     const txt_name = "CMakeLists.txt";
 
     builder: *Builder,
@@ -112,6 +108,7 @@ pub const ListsStep = struct {
     txt: ?[]const u8,
     txt_src: ?*?[]const u8,
     path: ?[]const u8,
+    build_dir: ?[]const u8,
 
     pub fn create(
         builder: *Builder,
@@ -128,6 +125,7 @@ pub const ListsStep = struct {
             .txt = null,
             .txt_src = null,
             .path = null,
+            .build_dir = null,
         };
         return self;
     }
@@ -151,6 +149,13 @@ pub const ListsStep = struct {
             var cmakelists_txt = try cmake_dir.createFile(txt_name, .{});
             try cmakelists_txt.writeAll(txt);
             std.log.scoped(.CMakeLists).info("Written CMakeLists.txt", .{});
+
+            self.build_dir = try util.zigCacheMakePath(
+                self.builder,
+                build_dir_name,
+                .CmakeLists,
+            );
+
             self.path = try std.mem.concat(self.builder.allocator, u8, &.{
                 self.builder.build_root,
                 std.fs.path.sep_str,

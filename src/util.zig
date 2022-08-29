@@ -9,6 +9,25 @@ pub fn picoSdkDirPath() ![]const u8 {
     return std.os.getenv("PICO_SDK_PATH") orelse error.PicoSdkPathEnv;
 }
 
+/// allocs with builder
+pub fn zigInstallDirPath(b : *std.build.Builder) ![]const u8 {
+    var path_buffer : [std.fs.MAX_PATH_BYTES]u8 = .{};
+    if (std.fs.path.isAbsolute(b.install_prefix)) {
+        return try b.allocator.dupe(u8, b.install_prefix);
+    }
+    else {
+        const parent_dir = try std.fs.realpath(
+            ".",
+            &path_buffer
+        );
+        return try std.mem.concat(b.allocator, u8, &.{
+            parent_dir,
+            std.fs.path.sep_str,
+            b.install_prefix,
+        });
+    }
+}
+
 /// Like std.ChildProcess.exec but with failure based on process exit state
 pub fn exec(
     allocator: std.mem.Allocator,
@@ -85,10 +104,8 @@ pub fn zigBuildMakeOpenPath(
     flags: std.fs.Dir.OpenDirOptions,
     comptime log_scope: anytype,
 ) !std.fs.Dir {
-    const path_buffer = try b.allocator.alloc(u8, std.fs.MAX_PATH_BYTES);
-    defer b.allocator.free(path_buffer);
-    const real_prefix_path = try std.fs.realpath(b.install_prefix, path_buffer[0..std.fs.MAX_PATH_BYTES]);
-
+    const real_prefix_path = try zigInstallDirPath(b);
+    defer b.allocator.free(real_prefix_path);
     var build_dir = try std.fs.openDirAbsolute(real_prefix_path, .{});
     defer build_dir.close();
     const dir = try build_dir.makeOpenPath(sub_path, flags);

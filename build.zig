@@ -8,17 +8,15 @@ pub fn build(b: *std.build.Builder) void {
         b,
         "pico-app",
         "example/main.zig",
-        .pico_w,
+        .{ .pico_w = .{ .cyw43_arch = .threadsafe_background } },
         &.{
             picosdk.pico_stdlib,
-            picosdk.pico_cyw43_arch_none
+            picosdk.pico_cyw43_arch_none,
         },
     );
 
     pico_app.zig.setBuildMode(mode);
-    
     pico_app.enable_stdio(.usb);
-
     pico_app.install();
 }
 

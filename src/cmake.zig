@@ -6,6 +6,7 @@ const Step = std.build.Step;
 const Dir = std.fs.Dir;
 const File = std.fs.File;
 const InstallArtifactStep = std.build.InstallArtifactStep;
+const LibExeObjStep = std.build.LibExeObjStep;
 
 pub const MakeStep = struct {
     const Self = @This();
@@ -62,7 +63,7 @@ pub const BuildStep = struct {
     pub fn create(
         builder: *Builder,
         cmakelists: *ListsStep,
-        install_step: *InstallArtifactStep,
+        zig: *LibExeObjStep,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         self.* = Self {
@@ -77,7 +78,8 @@ pub const BuildStep = struct {
             .cmakelists = cmakelists,
         };
         self.step.dependOn(&cmakelists.step);
-        self.step.dependOn(&install_step.step);
+        //self.step.dependOn(zig.install_step.?.step);
+        zig.step.dependOn(&self.step);
         return self;
     }
 

@@ -9,6 +9,16 @@ const Step = std.build.Step;
 const LibExeObjStep = std.build.LibExeObjStep;
 const CreateOptions = std.build.InstallRawStep.CreateOptions;
 
+pub const Board = union(enum) {
+    pico: void,
+    pico_w: struct {
+        cyw43_arch: enum {
+            threadsafe_background,
+            poll,
+        },
+    },
+};
+
 pub const rp2040_target = std.zig.CrossTarget {
     .cpu_arch = .thumb,
     .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m0plus },
@@ -32,7 +42,7 @@ pub const PicoAppStep = struct {
         builder: *Builder,
         name: []const u8,
         root_src: ?[]const u8,
-        board: []const u8,
+        board: Board,
         libs: []const Library,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
@@ -46,7 +56,7 @@ pub const PicoAppStep = struct {
         const genpicolists = sdk.GenPicoListsStep.create(
             builder,
             zig,
-            board,
+            @tagName(board),
             libs,
         );
 
@@ -59,13 +69,13 @@ pub const PicoAppStep = struct {
             libs,
             zig,
             cmakelists,
+            board,
         );
 
-        zig.install();
         const cmakebuild = cmake.BuildStep.create(
             builder,
             cmakelists,
-            zig.install_step.?,
+            zig,
         );
 
         const cmakemake = cmake.MakeStep.create(builder, cmakebuild);
@@ -85,7 +95,9 @@ pub const PicoAppStep = struct {
             .emit_uf2 = true,
         };
 
+        self.zig.install();
         self.step.dependOn(&cmakemake.step);
+        self.cmakemake.step.dependOn(&self.zig.install_step.?.step);
         return self;
     }
 

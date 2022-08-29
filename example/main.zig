@@ -1,28 +1,48 @@
-//const c = @cImport({
-//    @cInclude("pico/stdlib.h");
-//    @cInclude("pico/cyw43_arch.h");
-//});
+const std = @import("std");
 
-extern fn stdio_init_all() void;
-extern fn cyw43_arch_init() c_int;
-extern fn cyw43_arch_gpio_put(pin: c_int, value: c_int) void;
-extern fn sleep_ms(ms: c_int) void;
+const c = @cImport({
+    @cInclude("pico/stdlib.h");
+    @cInclude("pico/stdio.h");
+    @cInclude("pico/cyw43_arch.h");
+});
 
 const CYW43_WL_GPIO_LED_PIN = 0;
 
 var led_state : bool = false;
+var total_blinks : i32 = 0;
 
 export fn init() void {
-    stdio_init_all();
-    if (cyw43_arch_init() != 1) {
-        // adding print support after adding C includes
+    c.stdio_init_all();
+    if (c.cyw43_arch_init() != 1) {
+        std.log.info("WiFi fail.", .{});
         return;
     }
 }
 
 export fn loop() void {
     led_state = !led_state;
-    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, @boolToInt(led_state));
-    sleep_ms(150);
+    c.cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led_state);
+    c.sleep_ms(350);
+
+    if (led_state == false) {
+        std.log.info("Blink! {d}", .{total_blinks});
+        total_blinks = total_blinks + 1;
+    }
+}
+
+pub fn log(
+    comptime message_level: std.log.Level,
+    comptime scope: @Type(.EnumLiteral),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    const level_txt = comptime message_level.asText();
+    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
+
+    var buffer: [1024]u8 = .{};
+    var message = std.fmt.bufPrint(&buffer, level_txt ++ prefix2 ++ format ++ "\n\r", args) catch return;
+    for (message) |char| {
+        _ = c.putchar_raw(char);
+    }
 }
 

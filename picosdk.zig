@@ -10,27 +10,26 @@ pub fn addPicoApp(
     builder: *Builder,
     name: []const u8,
     root_src: []const u8,
-    comptime board: @Type(.EnumLiteral),
+    board: pico.Board,
     libs: []const Library,
 ) *PicoAppStep {
     return pico.PicoAppStep.create(
         builder,
         name,
         root_src,
-        @tagName(board),
+        board,
         libs,
     );
 }
 
+// I want wrappers and packages, so this will likely change
 pub usingnamespace struct {
     pub const pico_stdlib = Library {
         .name = "pico_stdlib",
-        .path = "todo",
     };
 
     pub const pico_cyw43_arch_none = Library {
         .name = "pico_cyw43_arch_none",
-        .path = "todo",
     };
 };
 

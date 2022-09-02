@@ -74,14 +74,12 @@ pub const IncludeStep = struct {
 
     builder: *Builder,
     step: Step,
-    libs: []const Self,
     zig: *LibExeObjStep,
     cmakelists: *cmake.ListsStep,
     board: pico.Board,
 
     pub fn create(
         builder: *Builder,
-        libs: []const Self,
         zig: *LibExeObjStep,
         cmakelists: *cmake.ListsStep,
         board: pico.Board,
@@ -95,7 +93,6 @@ pub const IncludeStep = struct {
                 builder.allocator,
                 make,
             ),
-            .libs = libs,
             .zig = zig,
             .cmakelists = cmakelists,
             .board = board,
@@ -126,6 +123,7 @@ pub const IncludeStep = struct {
         });
         defer allocator.free(generated);
         self.zig.addSystemIncludeDir(generated);
+        self.zig.addIncludeDir(self.cmakelists.build_dir.?);
         self.zig.addSystemIncludeDir("/usr/lib/arm-none-eabi/include");
 
         switch (self.board) {

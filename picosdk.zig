@@ -11,14 +11,12 @@ pub fn addPicoApp(
     name: []const u8,
     root_src: []const u8,
     board: pico.Board,
-    libs: []const Library,
 ) *PicoAppStep {
     return pico.PicoAppStep.create(
         builder,
         name,
         root_src,
         board,
-        libs,
     );
 }
 
@@ -30,6 +28,10 @@ pub usingnamespace struct {
 
     pub const pico_cyw43_arch_none = Library {
         .name = "pico_cyw43_arch_none",
+    };
+
+    pub const hardware_pio = Library {
+        .name = "hardware_pio",
     };
 };
 

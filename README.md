@@ -35,8 +35,7 @@ picotool load -f zig-out/uf2/pico-app.uf2
 ## Todo
 - [x] integrate cmake into zig build
 - [x] add include paths of pico libraries to app
-- [ ] optimize cmake build steps
-- [ ] wrap pico-sdk functions into Pkgs
+- [x] add PIO support
 - [ ] ???
 - [ ] profit
 

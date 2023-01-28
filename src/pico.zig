@@ -20,7 +20,7 @@ pub const Board = union(enum) {
     },
 };
 
-pub const rp2040_target = std.zig.CrossTarget {
+pub const rp2040_target = std.zig.CrossTarget{
     .cpu_arch = .thumb,
     .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m0plus },
     .os_tag = .freestanding,
@@ -33,7 +33,7 @@ pub const PicoAppStep = struct {
     builder: *Builder,
     step: Step,
     zig: *LibExeObjStep,
-    pio_files: ArrayList([]const u8),
+    // pio_files: ArrayList([]const u8),
     board: Board,
     libs: ArrayList(Library),
     genpicolists: *sdk.GenPicoListsStep,
@@ -47,7 +47,7 @@ pub const PicoAppStep = struct {
         board: Board,
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
-        self.* = Self {
+        self.* = Self{
             .builder = builder,
             .step = Step.init(
                 .custom,
@@ -56,7 +56,7 @@ pub const PicoAppStep = struct {
                 make,
             ),
             .zig = builder.addStaticLibrary(name, root_src),
-            .pio_files = ArrayList([]const u8).init(builder.allocator),
+            // .pio_files = ArrayList([]const u8).init(builder.allocator),
             .libs = ArrayList(Library).init(builder.allocator),
             .board = board,
             .emit_uf2 = true,
@@ -65,7 +65,7 @@ pub const PicoAppStep = struct {
         };
 
         self.zig.setTarget(rp2040_target);
-        self.zig.override_dest_dir = std.build.InstallDir {
+        self.zig.override_dest_dir = std.build.InstallDir{
             .custom = "lib",
         };
         self.zig.install();
@@ -75,7 +75,7 @@ pub const PicoAppStep = struct {
             self.zig,
             @tagName(board),
             &self.libs,
-            &self.pio_files,
+            // &self.pio_files,
         );
 
         const cmakelists = cmake.ListsStep.create(builder);
@@ -109,16 +109,9 @@ pub const PicoAppStep = struct {
         var build_dir = try std.fs.openDirAbsolute(self.cmakemake.build_dir.?, .{});
         defer build_dir.close();
         if (self.emit_uf2) {
-            const uf2_name = try std.mem.concat(self.builder.allocator, u8, &.{
-                self.zig.name, ".uf2"
-            });
+            const uf2_name = try std.mem.concat(self.builder.allocator, u8, &.{ self.zig.name, ".uf2" });
             defer self.builder.allocator.free(uf2_name);
-            var uf2_dir = try util.zigBuildMakeOpenPath(
-                self.builder,
-                "uf2",
-                .{},
-                .PicoApp
-            );
+            var uf2_dir = try util.zigBuildMakeOpenPath(self.builder, "uf2", .{}, .PicoApp);
             defer uf2_dir.close();
             try build_dir.copyFile(uf2_name, uf2_dir, uf2_name, .{});
         }
@@ -128,9 +121,9 @@ pub const PicoAppStep = struct {
         self.libs.appendSlice(libs) catch unreachable;
     }
 
-    pub fn addPioSources(self: *Self, pio_files: []const []const u8) void {
-        self.pio_files.appendSlice(pio_files) catch unreachable;
-    }
+    // pub fn addPioSources(self: *Self, pio_files: []const []const u8) void {
+    //    self.pio_files.appendSlice(pio_files) catch unreachable;
+    // }
 
     pub fn enable_stdio(self: *Self, stdio: sdk.Stdio_Options) void {
         self.genpicolists.enable_stdio = stdio;
@@ -139,4 +132,4 @@ pub const PicoAppStep = struct {
     pub fn install(self: *Self) void {
         self.builder.getInstallStep().dependOn(&self.step);
     }
-}; 
+};

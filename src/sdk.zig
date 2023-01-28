@@ -20,7 +20,7 @@ pub const GenPicoListsStep = struct {
     txt: ?[]const u8,
     app: *LibExeObjStep,
     libs: *ArrayList(Library),
-    pio_files: *ArrayList([]const u8),
+    // pio_files: *ArrayList([]const u8),
     board: []const u8,
     enable_stdio: Stdio_Options,
 
@@ -29,7 +29,7 @@ pub const GenPicoListsStep = struct {
         app: *LibExeObjStep,
         board: []const u8,
         libs: *ArrayList(Library),
-        pio_files: *ArrayList([]const u8),
+        // pio_files: *ArrayList([]const u8),
     ) *Self {
         const self = builder.allocator.create(Self) catch unreachable;
         self.* = Self {
@@ -43,7 +43,7 @@ pub const GenPicoListsStep = struct {
             .txt = null,
             .app = app,
             .libs = libs,
-            .pio_files = pio_files,
+            // .pio_files = pio_files,
             .board = board,
             .enable_stdio = .none,
         };
@@ -89,20 +89,20 @@ pub const GenPicoListsStep = struct {
         const uart : i32 =
             if (self.enable_stdio == .uart or self.enable_stdio == .uart_usb) 1 else 0;
 
-        var pio_paths = ArrayList(u8).init(allocator);
-        defer pio_paths.deinit();
-        var pio_writer = pio_paths.writer();
-        for (self.pio_files.items) |pio| {
-            const pio_path = try std.mem.concat(allocator, u8, &.{
-                self.builder.build_root,
-                std.fs.path.sep_str,
-                pio,
-            });
-            defer allocator.free(pio_path);
-            try pio_writer.print("pico_generate_pio_header({s} {s})", .{
-                self.app.name, pio_path,
-            });
-        }
+        // var pio_paths = ArrayList(u8).init(allocator);
+        // defer pio_paths.deinit();
+        // var pio_writer = pio_paths.writer();
+        // for (self.pio_files.items) |pio| {
+        //    const pio_path = try std.mem.concat(allocator, u8, &.{
+        //        self.builder.build_root,
+        //        std.fs.path.sep_str,
+        //        pio,
+        //    });
+        //    defer allocator.free(pio_path);
+        //    try pio_writer.print("pico_generate_pio_header({s} {s})", .{
+        //        self.app.name, pio_path,
+        //    });
+        // }
 
         try writer.print(
             \\cmake_minimum_required(VERSION {s})
@@ -116,8 +116,6 @@ pub const GenPicoListsStep = struct {
             \\add_library(zig-app-lib STATIC IMPORTED GLOBAL)
             \\set_target_properties(zig-app-lib PROPERTIES IMPORTED_LOCATION {s})
             \\add_executable({s} {s})
-            \\#pio headers
-            \\{s}
             \\target_link_libraries({s} zig-app-lib {s})
             \\pico_enable_stdio_usb({s} {d})
             \\pico_enable_stdio_uart({s} {d})
@@ -132,7 +130,7 @@ pub const GenPicoListsStep = struct {
                 self.app.name,
                 app_path,
                 self.app.name, entry_c_path,
-                pio_paths.items,
+                // pio_paths.items,
                 self.app.name, libnames,
                 self.app.name, usb,
                 self.app.name, uart,

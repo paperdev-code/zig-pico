@@ -1,12 +1,5 @@
 ##### Update
-I am thinking about doing a rewrite.
-Currently, this code does not compile on Zig 0.10.x and I think there's lots to be improved here which I am planning to do in the coming weeks.
-
-I am not archiving this repository because it will likely be on some branch here `refactor`. But it will contain major breaking changes.
-
-I think the idea of handling the entire CMake project is still very much the best way to do this weird project. I am hopeful Clang support will improve to replace `gcc` with `zig cc`, so I will keep this sort of thing in mind during the rewrite.
-
-Hopefully by the end, it will be easier to actually maintain and I can make some neat zig wrappers for the sdk.
+Going to do a complete rewrite as this doesn't work on Zig 0.10.x, archiving.
 
 ###### - Paperdev
 
